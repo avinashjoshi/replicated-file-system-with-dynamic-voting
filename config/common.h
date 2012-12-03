@@ -20,5 +20,19 @@
 #include "dbg.h"
 #define PATH_SEPARATOR '/'
 
+#define UP 1
+#define DOWN 0
+
 #define TRUE 1
 #define FALSE 0
+
+#define HOST_SIZE 25
+#define BUF_LEN 1024
+
+const char *prog_name;
+
+struct node {
+	int number;
+	char name[HOST_SIZE];
+	int status;
+} serv_list[TOTAL_SERVERS];

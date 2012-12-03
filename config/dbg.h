@@ -9,8 +9,10 @@
 
 	#ifdef NDEBUG
 		#define debug(M, ...)
+		#define debug_clean(M, ...)
 	#else 
-		#define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__) 
+		#define debug(M, ...) fprintf(stderr, "[DEBUG] %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__) 
+		#define debug_clean(M, ...) fprintf(stderr, "[DEBUG] " M "\n", ##__VA_ARGS__) 
 	#endif
 
 	#define clean_errno() (errno == 0 ? "" : strerror(errno))
