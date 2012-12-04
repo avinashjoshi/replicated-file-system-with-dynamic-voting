@@ -84,8 +84,7 @@ print_con_list ( void ) {
 	return;
 }
 
-void diep(char *s)
-{
+void diep(char *s) {
 	perror(s);
 	exit(EXIT_FAILURE);
 }

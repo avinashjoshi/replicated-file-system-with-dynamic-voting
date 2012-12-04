@@ -14,13 +14,12 @@ main ( int argc, char *argv[] ) {
 	print_con_list();
 #endif
 
-	udp_init ( u_port );
+	udp_recv_init ( u_port );
+	udp_send_init();
 
 	sleep(3);
 
-#ifdef _TEST_
-	test_udp_send ( u_port );
-#endif
+	ping_servers();
 
 	pthread_join ( udp_thread, NULL );
 
