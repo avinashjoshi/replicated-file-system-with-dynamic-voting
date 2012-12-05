@@ -42,10 +42,10 @@ void
 		ret_recv = recvfrom(sock_udp_recv, ptr_buf, n_buffer, 0, (struct sockaddr *)&addr_client, &n_addr_client);
 		if(ret_recv < 0) {
 			close(sock_udp_recv);
-			diep("UDP Server - recvfrom() error");
+			diep("[UDP-SERVER] recvfrom() error");
 		}
 
-		log_info("[RECEIVED] (%s) %s:%d - \"%s\"", resolve_hostname (inet_ntoa(addr_client.sin_addr)),
+		log_info("[UDP-SERVER] RECEIVED (%s) %s:%d - \"%s\"", resolve_hostname (inet_ntoa(addr_client.sin_addr)),
 				inet_ntoa(addr_client.sin_addr), ntohs(addr_client.sin_port), ptr_buf);
 	}
 	log_err ("Exitting :(");
@@ -64,9 +64,9 @@ udp_recv_init ( int u_port ) {
 	socklen_t n_addr_server = sizeof(addr_server);
 
 	if((sock_udp_recv = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		diep("UDP server - socket() error");
+		diep("[UDP-SERVER] socket() error");
 	} else {
-		log_info("UDP server - socket() is OK");
+		log_info("[UDP-SERVER] socket() is OK");
 	}
 
 	memset(&addr_server, 0x00, n_addr_server);
@@ -75,17 +75,17 @@ udp_recv_init ( int u_port ) {
 	addr_server.sin_addr.s_addr = htonl(INADDR_ANY);
 	if((ret_bind = bind(sock_udp_recv, (struct sockaddr *)&addr_server, n_addr_server)) < 0) {
 		close(sock_udp_recv);
-		diep("UDP server - bind() error");
+		diep("[UDP-SERVER] bind() error");
 		/* If something wrong with socket(), just exit lol */
 	} else {
-		log_info("UDP server - bind() is OK");
+		log_info("[UDP-SERVER] bind() is OK");
 	}
 
 	err = pthread_create ( &udp_thread, NULL, handle_udp, u_port );
 
-	ASSERT ( (err == 0), " - Unable to create thread");
+	ASSERT ( (err == 0), "[UDP-SERVER] Unable to create thread");
 
-	log_info ("Thread created");
+	log_info ("[UDP-SERVER] Thread created");
 }
 
 /*
@@ -127,7 +127,7 @@ udp_send ( char *s_to_whom, int i_the_port, char *s_the_message ) {
 
 	ret_send = sendto (sock_udp_send, ptr_buf, len_buffer, 0, (struct sockaddr *)&addr_server, sizeof(addr_server));
 	if(ret_send < 0) {
-		log_err("UDP Client - sendto() error");
+		log_err("[UDP-SENDER] sendto() error");
 	}
 }
 
@@ -137,9 +137,9 @@ udp_send ( char *s_to_whom, int i_the_port, char *s_the_message ) {
 void
 udp_send_init ( void ) {
 	if( (sock_udp_send = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-		diep("UDP Sender - socket() error");
+		diep("[UDP-SENDER] socket() error");
 	} else {
-		log_info("Created Socket for UDP Sender!");
+		log_info("[UDP-SENDER] Created Socket for UDP Sender!");
 	}
 }
 

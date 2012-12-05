@@ -9,7 +9,7 @@ i=1
 for line in `cat $ROOT_DIR/config/file_servers.conf`
 do
 	echo "ssh to $line and run ./server"
-	ssh $line "cd $ROOT_DIR; nohup ./server > output/s_$i 2>&1 &"
+	ssh $line "cd $ROOT_DIR; nohup ./server > /dev/null 2>&1  &"
 	if [ $i -eq $total ]; then
 		break;
 	fi

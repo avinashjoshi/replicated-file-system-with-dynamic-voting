@@ -1,2 +1,2 @@
-#rm -rf output data_centers result
+rm -rf output logs
 make clobber

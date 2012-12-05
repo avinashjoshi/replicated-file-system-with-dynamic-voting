@@ -1,3 +1,3 @@
-rm -rf output
-mkdir output
+rm -rf output logs
+mkdir output logs
 make clobber && make

@@ -1,7 +1,7 @@
 # Makefile for Replicated file system
 CC := gcc
-SERVER_OBJ := server_src/main.o server_src/helper.o server_src/udp.o
-MASTER_OBJ := master_src/main.o
+SERVER_OBJ := server_src/main.o server_src/helper.o server_src/udp.o server_src/tcp.o
+MASTER_OBJ := master_src/main.o master_src/helper.o master_src/tcp.o
 
 #%.o: %.c
 #	$(CC) -c -o $@ $< $(LDFLAGS)

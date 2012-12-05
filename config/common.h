@@ -26,10 +26,14 @@
 #define TRUE 1
 #define FALSE 0
 
-#define HOST_SIZE 25
+#define HOST_SIZE 255
 #define BUF_LEN 1024
 
 const char *prog_name;
+char s_log_filename[225];
+FILE *fp_log;
+char s_hostname[HOST_SIZE];
+char s_hostname_short[HOST_SIZE];
 
 struct node {
 	int number;
