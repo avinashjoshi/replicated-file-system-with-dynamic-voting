@@ -18,7 +18,7 @@ main ( int argc, char *argv[] ) {
 	fclose(fp_log);
 
 	parse_config();
-	tcp_send_init ( PORT );
+	tcp_send_init ( );
 
 	pthread_join ( tcp_thread, NULL );
 

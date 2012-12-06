@@ -1,17 +1,18 @@
 #include "server_header.h"
 
 #include <pthread.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 
+/*
+ * Initialize the TCP receiver
+ *   - create socket
+ *   - fork thread
+ */
 void
 tcp_recv_init ( int t_port ) {
 	int sd, rc, length = sizeof(int);
 	struct sockaddr_in addr_server;
 
+	/* Create socket */
 	if((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("[TCP-SERVER] socket() error");
 		/* Just exit */
@@ -50,6 +51,10 @@ tcp_recv_init ( int t_port ) {
 
 }
 
+/*
+ * Actual function that handles all
+ * incoming TCP connections
+ */
 void
 *handle_tcp ( void *sd ) {
 	char buffer[BUF_LEN];
@@ -88,6 +93,10 @@ void
 		/* See if there is more data to receive */
 		if ((rc = recv(sock_tcp, buffer, BUF_LEN, 0)) < 0)
 			diep("[TCP-SERVER] recv() failed");
+	}
+
+	if ( rc == 0 ) {
+		log_info("[TCP-SERVER] Master closed connection");
 	}
 
 	log_info ("[TCP-SERVER] Closing TCP Connection");
