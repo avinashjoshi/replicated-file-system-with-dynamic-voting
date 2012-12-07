@@ -82,6 +82,10 @@ void
 	while (rc > 0) {
 		log_info("[TCP-SERVER] RECEIVED %s (%s) - %s", inet_ntoa(addr_master.sin_addr), resolve_hostname(inet_ntoa(addr_master.sin_addr)), buffer);
 
+		pthread_mutex_lock ( &lock_tcp_q );
+		insert_queue ( &tcp_q, inet_ntoa(addr_master.sin_addr), buffer );
+		pthread_mutex_lock ( &lock_tcp_q );
+
 		/* Server does not echo back!
 		 * - only receives and put in queue
 		 *

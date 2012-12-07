@@ -1,4 +1,4 @@
-#include "../config/common.h"
+#include "../common/common.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -7,6 +7,7 @@
 #include <errno.h>
 
 pthread_t tcp_thread;
+pthread_t lock_tcp_sock;
 int sock_tcp[TOTAL_SERVERS];
 
 /*

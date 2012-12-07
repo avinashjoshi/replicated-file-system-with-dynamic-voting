@@ -4,15 +4,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-/* Edit the vaues below this line */
-#define PORT 2662
-#define CONF_FILE "config/file_servers.conf"
-#define TOTAL_SERVERS 7
-
-/* Uncomment to *disable* DEBUG messages */
-//#define NDEBUG
-/* Uncomment to *enable* TEST sections */
-#define _TEST_
+#include "../config/config.h"
 
 /*
  * !!! Do not edit below this line !!!
@@ -53,6 +45,23 @@ struct node {
 } serv_list[TOTAL_SERVERS];
 
 /*
+ * Queues
+ */
+typedef struct queue_struct {
+	char data[BUF_LEN];
+	char host[HOST_SIZE];
+	struct queue_struct *next;
+} queue;
+
+queue *tcp_q;
+queue *udp_q;
+
+/*
+ * Thread locks
+ */
+pthread_t lock_tcp_q;
+
+/*
  * Function decleration for common functions
  */
 void diep ( char * );
@@ -60,3 +69,9 @@ char * resolve_hostname ( char * );
 void parse_config ( void );
 void print_con_list ( void );
 const char * get_program_name ( char * );
+
+/* Queue function declerations */
+void insert_queue ( queue **, char *, char * );
+queue * remove_queue ( queue ** );
+int is_queue_empty ( queue * );
+void print_queue ( queue * );

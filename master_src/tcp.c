@@ -34,12 +34,15 @@ void
 	strcpy ( s_name, serv_list[i_serv].name);
 	strcpy ( s_cname, serv_list[i_serv].c_name);
 
+	pthread_mutex_lock ( &lock_tcp_sock );
 	if((sock_tcp[i_serv] = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		log_err("[TCP-SENDER] %s: socket() error", s_cname);
+		pthread_mutex_unlock ( &lock_tcp_sock );
 		exit(-1);
 	} else {
 		log_info("[TCP-SENDER] %s: socket() OK", s_cname);
 	}
+	pthread_mutex_unlock ( &lock_tcp_sock );
 
 	memset(&addr_serv, 0x00, sizeof(struct sockaddr_in));
 	addr_serv.sin_family = AF_INET;
@@ -77,7 +80,6 @@ void
 	} else {
 		log_info("[TCP-SENDER] %s: connect() Connection established", s_cname);
 	}
-
 
 	log_info("[TCP-SENDER] Sending \"%s\" %s:%d", data, s_cname, t_port);
 	rc = write(sock_tcp[i_serv], data, sizeof(data));

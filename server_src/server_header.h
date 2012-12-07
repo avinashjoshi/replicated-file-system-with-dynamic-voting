@@ -1,4 +1,4 @@
-#include "../config/common.h"
+#include "../common/common.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

@@ -1,6 +1,6 @@
 #!/bin/sh
 ROOT_DIR="/home/004/a/ax/axj107420/aos/replicated_fs"
-total=`cat $ROOT_DIR/config/common.h | grep TOTAL_SERVERS | cut -f3 -d" "`
+total=`cat $ROOT_DIR/config/config.h | grep TOTAL_SERVERS | cut -f3 -d" "`
 i=1
 for line in `cat $ROOT_DIR/config/file_servers.conf`
 do
