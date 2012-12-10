@@ -10,3 +10,4 @@
 #define _TEST_
 
 #define CONF_FILE "config/file_servers.conf"
+#define COMMANDS_FILE "config/commands.txt"

@@ -22,6 +22,11 @@
 #define HOST_SIZE 255
 #define BUF_LEN 1024
 
+/* Defining time units */
+#define _USEC 1
+#define _MSEC 1000 * _USEC
+#define _SEC 1000 * _MSEC
+
 const char *prog_name;
 char s_log_filename[225];
 FILE *fp_log;
@@ -60,6 +65,7 @@ queue *udp_q;
  * Thread locks
  */
 pthread_t lock_tcp_q;
+pthread_t lock_udp_q;
 
 /*
  * Function decleration for common functions

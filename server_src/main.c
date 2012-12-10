@@ -61,8 +61,11 @@ main ( int argc, char *argv[] ) {
 
 	//ping_servers();
 
+	pthread_create ( &tcp_queue_thread, NULL, handle_tcp_queue, NULL);
+
 	pthread_join ( udp_thread, NULL );
 	pthread_join ( tcp_thread, NULL );
+	pthread_join ( tcp_queue_thread, NULL );
 
 	return EXIT_SUCCESS;
 }

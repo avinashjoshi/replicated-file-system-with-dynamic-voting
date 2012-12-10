@@ -29,7 +29,7 @@ void
 	char s_name[HOST_SIZE];
 	char s_cname[HOST_SIZE];
 	struct hostent *hp_host;
-	char data[100] = "HELLO";
+	char data[100] = "PING";
 
 	strcpy ( s_name, serv_list[i_serv].name);
 	strcpy ( s_cname, serv_list[i_serv].c_name);
@@ -51,10 +51,6 @@ void
 	if((addr_serv.sin_addr.s_addr = inet_addr(s_name)) == (unsigned long)INADDR_NONE)
 	{
 
-		/* When passing the host name of the s_name as a */
-		/* parameter to this program, use the gethostbyname() */
-		/* function to retrieve the address of the host s_name. */
-		/***************************************************/
 		/* get host address */
 		hp_host = gethostbyname(s_name);
 		if(hp_host == (struct hostent *)NULL) {
@@ -68,10 +64,6 @@ void
 		memcpy(&addr_serv.sin_addr, hp_host->h_addr, sizeof(addr_serv.sin_addr));
 	}
 
-	/* After the socket descriptor is received, the */
-	/* connect() function is used to establish a */
-	/* connection to the s_name. */
-	/***********************************************/
 	/* connect() to s_name. */
 	if((rc = connect(sock_tcp[i_serv], (struct sockaddr *)&addr_serv, sizeof(addr_serv))) < 0) {
 		log_err("[TCP-SENDER] %s: connect() error", s_cname);
@@ -98,14 +90,21 @@ void
 	if ((rc = recv(sock_tcp[i_serv], buffer, BUF_LEN, 0)) < 0)
 		diep("[TCP-SERVER] recv() failed");
 
+	if ( strcmp (buffer, "REPLY") == 0) {
+		pthread_mutex_lock(&lock_tcp_sock);
+		tcp_replies ++;
+		pthread_mutex_unlock(&lock_tcp_sock);
+	}
+
 	/* Send received string and receive again until end of transmission */
 	while (rc > 0) {
 		log_info("[TCP-SERVER] RECEIVED %s - %s", s_cname, buffer);
 		/* Echo message back to client */
+		/*
 		if (send(sock_tcp[i_serv], buffer, rc, 0) != rc)
 			diep("[TCP-SERVER] send() failed");
+*/
 		bzero ( buffer, BUF_LEN );
-		break;
 
 		/* See if there is more data to receive */
 		if ((rc = recv(sock_tcp[i_serv], buffer, BUF_LEN, 0)) < 0)

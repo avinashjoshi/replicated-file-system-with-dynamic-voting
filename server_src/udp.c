@@ -39,7 +39,11 @@ void
 	socklen_t n_addr_client = sizeof(addr_client);
 
 	while (1) {
+		bzero ( ptr_buf, BUF_LEN );
 		ret_recv = recvfrom(sock_udp_recv, ptr_buf, n_buffer, 0, (struct sockaddr *)&addr_client, &n_addr_client);
+		if ( strcmp(ptr_buf, "NODE-DOWN") == 0 ) {
+			break;
+		}
 		if(ret_recv < 0) {
 			close(sock_udp_recv);
 			diep("[UDP-SERVER] recvfrom() error");
@@ -48,7 +52,8 @@ void
 		log_info("[UDP-SERVER] RECEIVED (%s) %s:%d - \"%s\"", resolve_hostname (inet_ntoa(addr_client.sin_addr)),
 				inet_ntoa(addr_client.sin_addr), ntohs(addr_client.sin_port), ptr_buf);
 	}
-	log_err ("Exitting :(");
+	close(sock_udp_recv);
+	log_err ("[UDP-SERVER] Exitting :(");
 
 	return NULL;
 }

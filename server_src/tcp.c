@@ -86,13 +86,9 @@ void
 		insert_queue ( &tcp_q, inet_ntoa(addr_master.sin_addr), buffer );
 		pthread_mutex_lock ( &lock_tcp_q );
 
-		/* Server does not echo back!
-		 * - only receives and put in queue
-		 *
-		if (send(sock_tcp, buffer, rc, 0) != rc)
-			diep("[TCP-SERVER] send() failed");
-		bzero ( buffer, BUF_LEN );
-		*/
+		if ( strcmp (buffer, "HALT") == 0) {
+			break;
+		}
 
 		/* See if there is more data to receive */
 		if ((rc = recv(sock_tcp, buffer, BUF_LEN, 0)) < 0)
@@ -105,5 +101,43 @@ void
 
 	log_info ("[TCP-SERVER] Closing TCP Connection");
 
+	return NULL;
+}
+
+void
+*handle_tcp_queue ( void *text ) {
+	queue *ret_q;
+	char s_buffer[BUF_LEN];
+	int i_can_send;
+	while (1) {
+		bzero ( s_buffer, BUF_LEN);
+		i_can_send = FALSE;
+		pthread_mutex_lock ( &lock_tcp_q );
+		if ( (ret_q = remove_queue ( &tcp_q ) ) == NULL ) {
+			pthread_mutex_unlock ( &lock_tcp_q );
+			usleep ( 300 );
+			continue;
+		}
+		pthread_mutex_unlock ( &lock_tcp_q );
+		printf ("REMOVED QUEUE: %s: %s\n", ret_q->host, ret_q->data);
+		if (strcmp(ret_q->data, "PING") == 0 ) {
+			sprintf ( s_buffer, "REPLY" );
+			i_can_send = TRUE;
+		} else if ( strcmp(ret_q->data, "HALT") == 0 ) {
+			udp_send ( "localhost", PORT, "NODE-DOWN");
+			break;
+		} else if ( strcmp(ret_q->data, "NODE-DOWN") == 0 ) {
+			udp_send ( "localhost", PORT, "NODE-DOWN");
+			break;
+		} else {
+			sprintf ( s_buffer, "UNKNOWN REPLY" );
+			i_can_send = TRUE;
+		}
+
+		if ( i_can_send ) {
+			send(sock_tcp, s_buffer, BUF_LEN, 0);
+		}
+	} // end while (1)
+	log_info ("[TCP-SERVER] Closing the handle_receive()");
 	return NULL;
 }
