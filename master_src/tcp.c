@@ -89,9 +89,9 @@ void
 	/* Send received string and receive again until end of transmission */
 	while ( (rc = recv(sock_tcp[i_serv], buffer, BUF_LEN, 0)) > 0) {
 
-		log_info ("[TCP-RECEIVE] Got %s from %s", buffer, s_cname);
+		write_file("[RECEIVED] %s: %s", s_cname, buffer);
 
-		if ( strcmp (buffer, "REPLY") == 0) {
+		if ( strcmp (buffer, "PONG") == 0) {
 			pthread_mutex_lock(&lock_tcp_sock);
 			tcp_replies ++;
 			pthread_mutex_unlock(&lock_tcp_sock);
@@ -100,8 +100,6 @@ void
 		if ( strcmp (buffer, "HALTED" ) == 0 ) {
 			log_info ("[TCP-SEVER] Halting confirmed by %s", s_cname);
 		}
-
-		log_info("[TCP-SERVER] RECEIVED %s - %s", s_cname, buffer);
 
 		bzero ( buffer, BUF_LEN );
 	}

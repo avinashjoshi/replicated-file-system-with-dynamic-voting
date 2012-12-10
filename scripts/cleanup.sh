@@ -1,2 +1,2 @@
-rm -rf output logs
+rm -rf file_servers logs
 make clobber

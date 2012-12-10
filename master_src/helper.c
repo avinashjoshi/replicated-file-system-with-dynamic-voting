@@ -33,13 +33,6 @@ handle_servers ( void ) {
 	bzero ( s_line, BUF_LEN );
 
 	while ( fgets ( s_line, sizeof s_line, fp_commands) != NULL ) {// Read line
-		/*
-		   c = strchr ( s_line, '\n' );
-		//Remove trailing \n
-		if (c) {
-		 *c = 0;
-		 }
-		 */
 		/* Tokenizing */
 		bzero (s_buffer, BUF_LEN);
 		bzero (command, BUF_LEN);

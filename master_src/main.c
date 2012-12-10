@@ -16,10 +16,15 @@ main ( int argc, char *argv[] ) {
 	strcpy ( s_hostname_short, s_hostname);
 	strtok(s_hostname_short, ".");
 	sprintf (s_log_filename, "logs/%s", s_hostname_short);
+	sprintf (s_out_filename, "logs/%s", s_hostname_short);
 
 	fp_log = fopen ( s_log_filename, "w" );
 	ASSERT ( fp_log, " - folder 'logs' does not exist");
 	fclose(fp_log);
+
+	fp_out = fopen ( s_out_filename, "w" );
+	ASSERT ( fp_out, " - folder 'logs' does not exist");
+	fclose(fp_out);
 
 	fp_commands = fopen ( COMMANDS_FILE, "r" );
 	ASSERT ( fp_commands, " - %s", COMMANDS_FILE );

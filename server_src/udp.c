@@ -24,6 +24,49 @@ resolve_hostname ( char *s_ip ) {
 	return (he->h_name);
 }
 
+void
+*handle_udp_queue ( void *text) {
+	queue *ret_q;
+	char s_buffer[BUF_LEN];
+	int i_can_send;
+	int serv_list_index;
+	while (1) {
+		bzero ( s_buffer, BUF_LEN);
+		i_can_send = FALSE;
+		pthread_mutex_lock ( &lock_udp_q );
+		if ( (ret_q = remove_queue ( &udp_q ) ) == NULL ) {
+			pthread_mutex_unlock ( &lock_udp_q );
+			usleep ( 300 );
+			continue;
+		}
+		pthread_mutex_unlock ( &lock_udp_q );
+		//printf ("REMOVED QUEUE: %s: %s\n", ret_q->host, ret_q->data);
+		if (strcmp(ret_q->data, "PING") == 0 ) {
+			sprintf ( s_buffer, "PONG" );
+			i_can_send = TRUE;
+		} else if (strcmp(ret_q->data, "HALT") == 0 ) {
+			break;
+		} else if (strcmp(ret_q->data, "PONG") == 0 ) {
+			// Got PONG for ping (i guess)
+			// Now let everyone know that he is alive
+			pthread_mutex_lock (&lock_ping_status);
+			serv_list_index = get_serv_index(ret_q->host);
+			serv_list[serv_list_index].status = UP;
+			pthread_mutex_unlock (&lock_ping_status);
+		} else {
+			sprintf ( s_buffer, "UNKNOWN COMMAND" );
+			i_can_send = TRUE;
+		}
+
+		if ( i_can_send ) {
+			udp_send ( ret_q->host, PORT, s_buffer);
+		}
+	} // end while (1)
+	log_info ("[UDP-SERVER] Closing the handle_udp_queue()");
+	
+	return NULL;
+}
+
 /*
  * This is the main function forked by udp_recv_init
  * that waits on recvfrom() and inserts the received
@@ -38,22 +81,34 @@ void
 	int n_buffer = sizeof(s_buffer);
 	socklen_t n_addr_client = sizeof(addr_client);
 
+	my_status = UP;
+	log_info ("[UDP-SERVER] Started");
+
 	while (1) {
 		bzero ( ptr_buf, BUF_LEN );
 		ret_recv = recvfrom(sock_udp_recv, ptr_buf, n_buffer, 0, (struct sockaddr *)&addr_client, &n_addr_client);
-		if ( strcmp(ptr_buf, "NODE-DOWN") == 0 ) {
-			break;
-		}
+
 		if(ret_recv < 0) {
 			close(sock_udp_recv);
 			diep("[UDP-SERVER] recvfrom() error");
 		}
 
+		if ( strcmp(ptr_buf, "NODE-DOWN") == 0 ) {
+			log_info ("[UDP-SERVER] Master requested NODE-DOWN");
+			my_status = DOWN;
+			break;
+		}
+
+		pthread_mutex_lock ( &lock_udp_q );
+		insert_queue ( &udp_q, resolve_hostname (inet_ntoa(addr_client.sin_addr)), ptr_buf );
+		pthread_mutex_unlock ( &lock_udp_q );
+
 		log_info("[UDP-SERVER] RECEIVED (%s) %s:%d - \"%s\"", resolve_hostname (inet_ntoa(addr_client.sin_addr)),
 				inet_ntoa(addr_client.sin_addr), ntohs(addr_client.sin_port), ptr_buf);
 	}
+
 	close(sock_udp_recv);
-	log_info ("[UDP-SERVER] Shutting down");
+	log_info ("[UDP-SERVER] Shutdown");
 
 	return NULL;
 }

@@ -104,6 +104,10 @@ void
 	return NULL;
 }
 
+/*
+ * This function checks queue for new messages
+ * and pops them, does computation
+ */
 void
 *handle_tcp_queue ( void *text ) {
 	queue *ret_q;
@@ -119,18 +123,28 @@ void
 			continue;
 		}
 		pthread_mutex_unlock ( &lock_tcp_q );
-		printf ("REMOVED QUEUE: %s: %s\n", ret_q->host, ret_q->data);
+		//printf ("REMOVED QUEUE: %s: %s\n", ret_q->host, ret_q->data);
 		if (strcmp(ret_q->data, "PING") == 0 ) {
-			sprintf ( s_buffer, "REPLY" );
+			sprintf ( s_buffer, "PONG" );
 			i_can_send = TRUE;
+		} else if ( strcmp(ret_q->data, "NODE-UP") == 0 ) {
+			udp_recv_init(PORT);
+			log_info ("[TCP-SERVER] Starting UDP Server");
 		} else if ( strcmp(ret_q->data, "HALT") == 0 ) {
-			udp_send ( "localhost", PORT, "NODE-DOWN");
+			if ( my_status == DOWN ) {
+				pthread_mutex_lock ( &lock_udp_q );
+				insert_queue ( &udp_q, "localhost", "HALT" );
+				pthread_mutex_unlock ( &lock_udp_q );
+			} else {
+				udp_send ( "localhost", PORT, "HALT");
+				udp_send ( "localhost", PORT, "NODE-DOWN");
+			}
+			send(sock_tcp, "HALTED", BUF_LEN, 0);
 			break;
 		} else if ( strcmp(ret_q->data, "NODE-DOWN") == 0 ) {
 			udp_send ( "localhost", PORT, "NODE-DOWN");
-			break;
 		} else {
-			sprintf ( s_buffer, "UNKNOWN REPLY" );
+			sprintf ( s_buffer, "UNKNOWN COMMAND" );
 			i_can_send = TRUE;
 		}
 
@@ -138,6 +152,6 @@ void
 			send(sock_tcp, s_buffer, BUF_LEN, 0);
 		}
 	} // end while (1)
-	log_info ("[TCP-SERVER] Closing the handle_receive()");
+	log_info ("[TCP-SERVER] Closing the handle_tcp_queue()");
 	return NULL;
 }

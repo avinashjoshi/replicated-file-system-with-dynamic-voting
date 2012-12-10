@@ -23,6 +23,8 @@
 
 	#define log_info(M, ...) fp_log = fopen(s_log_filename, "a"); fprintf(fp_log, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, ##__VA_ARGS__); fclose(fp_log)
 
+	#define write_file(M, ...) pthread_mutex_lock (&lock_file); fp_log = fopen(s_out_filename, "a"); fprintf(fp_log, M "\n", ##__VA_ARGS__); fclose(fp_log); pthread_mutex_unlock (&lock_file)
+
 	#define check(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; } 
 
 	#define check_exit(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; exit(EXIT_FAILURE); } 

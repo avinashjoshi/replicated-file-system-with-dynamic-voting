@@ -84,3 +84,16 @@ void diep(char *s) {
 	perror(s);
 	exit(EXIT_FAILURE);
 }
+
+int
+get_serv_index ( char *s_host ) {
+	int i_serv;
+	int ret_val = -1;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( strcmp(s_host, serv_list[i_serv].name) == 0 ) {
+			ret_val = i_serv;
+			break;
+		}
+	}
+	return ret_val;
+}

@@ -5,6 +5,8 @@ void
 global_init ( void ) {
 	sock_tcp = -1;
 	tcp_q = NULL;
+	udp_q = NULL;
+	my_status = DOWN;
 }
 
 int
@@ -17,12 +19,15 @@ main ( int argc, char *argv[] ) {
 	strcpy ( s_hostname_short, s_hostname);
 	strtok(s_hostname_short, ".");
 	sprintf (s_log_filename, "logs/%s", s_hostname_short);
+	sprintf (s_out_filename, "file_servers/%s", s_hostname_short);
 
 	fp_log = fopen ( s_log_filename, "w" );
-
 	ASSERT ( fp_log, " - folder 'logs' does not exist");
-
 	fclose(fp_log);
+
+	fp_out = fopen ( s_out_filename, "w" );
+	ASSERT ( fp_out, " - folder 'file_servers' does not exist");
+	fclose(fp_out);
 
 	/*
 	   queue *ret_q;
@@ -62,10 +67,12 @@ main ( int argc, char *argv[] ) {
 	//ping_servers();
 
 	pthread_create ( &tcp_queue_thread, NULL, handle_tcp_queue, NULL);
+	pthread_create ( &udp_queue_thread, NULL, handle_udp_queue, NULL);
 
 	pthread_join ( udp_thread, NULL );
 	pthread_join ( tcp_thread, NULL );
 	pthread_join ( tcp_queue_thread, NULL );
+	pthread_join ( udp_queue_thread, NULL );
 
 	return EXIT_SUCCESS;
 }
