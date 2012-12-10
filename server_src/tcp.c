@@ -9,7 +9,8 @@
  */
 void
 tcp_recv_init ( int t_port ) {
-	int sd, rc, length = sizeof(int);
+	int rc, err;
+	long int sd;
 	struct sockaddr_in addr_server;
 
 	/* Create socket */
@@ -44,9 +45,7 @@ tcp_recv_init ( int t_port ) {
 		log_info ("[TCP-SERVER] listen() is OK");
 	}
 
-	int err;
-
-	err = pthread_create ( &tcp_thread, NULL, handle_tcp, sd);
+	err = pthread_create ( &tcp_thread, NULL, handle_tcp, (void *) sd);
 	ASSERT ( (err == 0), "[TCP-SERVER] - Unable to create TCP thread");
 
 }
@@ -56,11 +55,12 @@ tcp_recv_init ( int t_port ) {
  * incoming TCP connections
  */
 void
-*handle_tcp ( void *sd ) {
+*handle_tcp ( void *sock_value ) {
 	char buffer[BUF_LEN];
 	int rc;
+	int sd = (long int) sock_value;
 	struct sockaddr_in addr_master;
-	int sin_size = sizeof(struct sockaddr_in);
+	socklen_t sin_size = sizeof(struct sockaddr_in);
 	if((sock_tcp = accept(sd, (struct sockaddr *)&addr_master, &sin_size)) < 0) {
 		perror("[TCP-SERVER] accept() error");
 		close(sd);
@@ -84,7 +84,7 @@ void
 
 		pthread_mutex_lock ( &lock_tcp_q );
 		insert_queue ( &tcp_q, inet_ntoa(addr_master.sin_addr), buffer );
-		pthread_mutex_lock ( &lock_tcp_q );
+		pthread_mutex_unlock ( &lock_tcp_q );
 
 		if ( strcmp (buffer, "HALT") == 0) {
 			break;

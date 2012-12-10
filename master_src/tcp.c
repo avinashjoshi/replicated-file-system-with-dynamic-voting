@@ -4,14 +4,14 @@
 
 void
 tcp_send_init ( void ) {
-	int i_serv;
+	long int i_serv;
 	int rc;
 
 	/*
 	 * Create thread for every s_name
 	 */
 	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++) {
-		rc = pthread_create ( &tcp_thread, NULL, handle_tcp, i_serv);
+		rc = pthread_create ( &tcp_thread[i_serv], NULL, handle_tcp, (void *) i_serv);
 		ASSERT ( (rc == 0), "[TCP-SERVER] - Unable to create TCP thread");
 	}
 }
@@ -22,8 +22,8 @@ tcp_send_init ( void ) {
 void
 *handle_tcp ( void *value ) {
 	int t_port = PORT;
-	int i_serv = (int) value;
-	int rc, length = sizeof(int);
+	int i_serv = (long int) value;
+	int rc;
 	struct sockaddr_in addr_serv;
 	char buffer[BUF_LEN];
 	char s_name[HOST_SIZE];
@@ -81,34 +81,38 @@ void
 		close(sock_tcp[i_serv]);
 		exit(-1);
 	} else {
-		log_info("[TCP-SENDER] %s: write() is OK", s_cname);
+		//log_info("[TCP-SENDER] %s: write() is OK", s_cname);
 	}
 
 	bzero ( buffer, BUF_LEN );
 
-	/* Receive message from client */
-	if ((rc = recv(sock_tcp[i_serv], buffer, BUF_LEN, 0)) < 0)
-		diep("[TCP-SERVER] recv() failed");
+	/* Send received string and receive again until end of transmission */
+	while ( (rc = recv(sock_tcp[i_serv], buffer, BUF_LEN, 0)) > 0) {
 
-	if ( strcmp (buffer, "REPLY") == 0) {
-		pthread_mutex_lock(&lock_tcp_sock);
-		tcp_replies ++;
-		pthread_mutex_unlock(&lock_tcp_sock);
+		log_info ("[TCP-RECEIVE] Got %s from %s", buffer, s_cname);
+
+		if ( strcmp (buffer, "REPLY") == 0) {
+			pthread_mutex_lock(&lock_tcp_sock);
+			tcp_replies ++;
+			pthread_mutex_unlock(&lock_tcp_sock);
+		}
+
+		if ( strcmp (buffer, "HALTED" ) == 0 ) {
+			log_info ("[TCP-SEVER] Halting confirmed by %s", s_cname);
+		}
+
+		log_info("[TCP-SERVER] RECEIVED %s - %s", s_cname, buffer);
+
+		bzero ( buffer, BUF_LEN );
 	}
 
-	/* Send received string and receive again until end of transmission */
-	while (rc > 0) {
-		log_info("[TCP-SERVER] RECEIVED %s - %s", s_cname, buffer);
-		/* Echo message back to client */
-		/*
-		if (send(sock_tcp[i_serv], buffer, rc, 0) != rc)
-			diep("[TCP-SERVER] send() failed");
-*/
-		bzero ( buffer, BUF_LEN );
+	/* Receive message from client */
+	if ( rc < 0 ) {
+		log_err("[TCP-SERVER] recv() failed");
+	}
 
-		/* See if there is more data to receive */
-		if ((rc = recv(sock_tcp[i_serv], buffer, BUF_LEN, 0)) < 0)
-			diep("[TCP-SERVER] recv() failed");
+	if ( rc == 0 ) {
+		log_info ( "[TCP-SERVER] Connection closed by %s", s_cname);
 	}
 
 	log_info ("[TCP-SERVER] Closing TCP Connection");

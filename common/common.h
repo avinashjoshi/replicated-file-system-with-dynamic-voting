@@ -64,8 +64,8 @@ queue *udp_q;
 /*
  * Thread locks
  */
-pthread_t lock_tcp_q;
-pthread_t lock_udp_q;
+pthread_mutex_t lock_tcp_q;
+pthread_mutex_t lock_udp_q;
 
 /*
  * Function decleration for common functions

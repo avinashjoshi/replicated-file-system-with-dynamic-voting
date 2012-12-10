@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <errno.h>
 
-pthread_t tcp_thread;
-pthread_t lock_tcp_sock;
+pthread_t tcp_thread[TOTAL_SERVERS];
+pthread_mutex_t lock_tcp_sock;
 int sock_tcp[TOTAL_SERVERS];
 
 int tcp_replies;

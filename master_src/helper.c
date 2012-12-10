@@ -20,7 +20,6 @@ close_tcp_socks ( void ) {
 void
 handle_servers ( void ) {
 	FILE *fp_commands;
-	char *c;
 	char s_line[BUF_LEN];
 
 	char *token;
@@ -75,9 +74,6 @@ handle_servers ( void ) {
 
 		/* Tokenizing */
 
-		//printf ("%s %d \"%s\"\n", command, value, message);
-
-		// Insert details into serv_list structure
 		bzero ( s_line, BUF_LEN );
 	}
 	return;

@@ -3,7 +3,7 @@
 
 void
 global_init ( void ) {
-	sock_tcp = NULL;
+	sock_tcp = -1;
 	tcp_q = NULL;
 }
 
@@ -57,7 +57,7 @@ main ( int argc, char *argv[] ) {
 	sleep(3);
 
 	/* Making sure that there is a TCP connection with the master */
-	while ( sock_tcp != NULL );
+	while ( sock_tcp != -1 );
 
 	//ping_servers();
 

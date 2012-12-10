@@ -53,7 +53,7 @@ void
 				inet_ntoa(addr_client.sin_addr), ntohs(addr_client.sin_port), ptr_buf);
 	}
 	close(sock_udp_recv);
-	log_err ("[UDP-SERVER] Exitting :(");
+	log_info ("[UDP-SERVER] Shutting down");
 
 	return NULL;
 }
@@ -62,8 +62,9 @@ void
  * Initialize UDP Receive - Create socket
  */
 void
-udp_recv_init ( int u_port ) {
+udp_recv_init ( int i_port_value ) {
 	int err;
+	long int u_port = i_port_value;
 	int ret_bind;
 	struct sockaddr_in addr_server;
 	socklen_t n_addr_server = sizeof(addr_server);
@@ -86,7 +87,7 @@ udp_recv_init ( int u_port ) {
 		log_info("[UDP-SERVER] bind() is OK");
 	}
 
-	err = pthread_create ( &udp_thread, NULL, handle_udp, u_port );
+	err = pthread_create ( &udp_thread, NULL, handle_udp, (void *) u_port );
 
 	ASSERT ( (err == 0), "[UDP-SERVER] Unable to create thread");
 

@@ -1,4 +1,5 @@
 #include "master_header.h"
+#include <pthread.h>
 
 void
 global_init ( void ) {
@@ -9,6 +10,7 @@ int
 main ( int argc, char *argv[] ) {
 
 	FILE *fp_commands;
+	int i_serv;
 	prog_name = get_program_name ( argv[0] );
 	gethostname (s_hostname, sizeof s_hostname);
 	strcpy ( s_hostname_short, s_hostname);
@@ -40,13 +42,9 @@ main ( int argc, char *argv[] ) {
 	/* Handling the commands */
 	handle_servers();
 
-	/*
-	   sleep(5);
-	   log_info ("[TCP-SERVER] Closing all TCP sockets");
-	   close_tcp_socks();
-	   */
-
-	pthread_join ( tcp_thread, NULL );
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		pthread_join ( tcp_thread[i_serv], NULL );
+	}
 
 	return EXIT_SUCCESS;
 }
