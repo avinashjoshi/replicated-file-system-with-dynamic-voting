@@ -2,7 +2,10 @@
  * You can edit the vaues below this line
  */
 #define PORT 2662
-#define TOTAL_SERVERS 7
+#define TOTAL_SERVERS 5
+/* The network delay in milliseconds */
+#define NETWORK_DELAY 1
+#define TIMEOUT 300
 
 /* Uncomment to *disable* DEBUG messages */
 //#define NDEBUG

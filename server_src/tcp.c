@@ -112,7 +112,10 @@ void
 *handle_tcp_queue ( void *text ) {
 	queue *ret_q;
 	char s_buffer[BUF_LEN];
+	char s_write[BUF_LEN];
+	char s_temp[BUF_LEN];
 	int i_can_send;
+	char *token, *tok_saveptr;
 	while (1) {
 		bzero ( s_buffer, BUF_LEN);
 		i_can_send = FALSE;
@@ -128,6 +131,8 @@ void
 			sprintf ( s_buffer, "PONG" );
 			i_can_send = TRUE;
 		} else if ( strcmp(ret_q->data, "NODE-UP") == 0 ) {
+			reset_timers();
+			reset_servers();
 			udp_recv_init(PORT);
 			log_info ("[TCP-SERVER] Starting UDP Server");
 		} else if ( strcmp(ret_q->data, "HALT") == 0 ) {
@@ -136,16 +141,34 @@ void
 				insert_queue ( &udp_q, "localhost", "HALT" );
 				pthread_mutex_unlock ( &lock_udp_q );
 			} else {
+				/* Has to be send in the following order */
 				udp_send ( "localhost", PORT, "HALT");
 				udp_send ( "localhost", PORT, "NODE-DOWN");
 			}
 			send(sock_tcp, "HALTED", BUF_LEN, 0);
+			pthread_mutex_lock ( &lock_status );
+			my_status = HALTED;
+			pthread_mutex_unlock ( &lock_status );
 			break;
 		} else if ( strcmp(ret_q->data, "NODE-DOWN") == 0 ) {
 			udp_send ( "localhost", PORT, "NODE-DOWN");
+		} else if ( strcmp(ret_q->data, "READ") == 0 ) {
+			/* Read procedure */
 		} else {
-			sprintf ( s_buffer, "UNKNOWN COMMAND" );
-			i_can_send = TRUE;
+			strcpy ( s_temp, ret_q->data );
+			token = strtok_r (s_temp, " \"", &tok_saveptr);
+			if ( token == NULL ) {
+				sprintf ( s_buffer, "UNKNOWN-COMMAND" );
+				i_can_send = TRUE;
+			} else {
+				if (strcmp (token, "WRITE") == 0 ) {
+					/* Write procedure */
+					token = strtok_r (NULL, "\"", &tok_saveptr);
+					strcpy ( s_write, token );
+					write_file ( "%s", s_write);
+					print_rechable_servers();
+				}
+			}
 		}
 
 		if ( i_can_send ) {

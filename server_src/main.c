@@ -7,6 +7,11 @@ global_init ( void ) {
 	tcp_q = NULL;
 	udp_q = NULL;
 	my_status = DOWN;
+	vn = 0;
+	ru = TOTAL_SERVERS;
+	*ds = NULL;
+	reset_timers();
+	reset_servers();
 }
 
 int
@@ -68,6 +73,7 @@ main ( int argc, char *argv[] ) {
 
 	pthread_create ( &tcp_queue_thread, NULL, handle_tcp_queue, NULL);
 	pthread_create ( &udp_queue_thread, NULL, handle_udp_queue, NULL);
+	pthread_create ( &udp_timer, NULL, handle_timer, NULL);
 
 	pthread_join ( udp_thread, NULL );
 	pthread_join ( tcp_thread, NULL );

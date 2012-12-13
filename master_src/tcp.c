@@ -42,7 +42,6 @@ void
 	} else {
 		log_info("[TCP-SENDER] %s: socket() OK", s_cname);
 	}
-	pthread_mutex_unlock ( &lock_tcp_sock );
 
 	memset(&addr_serv, 0x00, sizeof(struct sockaddr_in));
 	addr_serv.sin_family = AF_INET;
@@ -84,6 +83,7 @@ void
 		//log_info("[TCP-SENDER] %s: write() is OK", s_cname);
 	}
 
+	pthread_mutex_unlock ( &lock_tcp_sock );
 	bzero ( buffer, BUF_LEN );
 
 	/* Send received string and receive again until end of transmission */

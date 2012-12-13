@@ -22,7 +22,7 @@ handle_servers ( void ) {
 	FILE *fp_commands;
 	char s_line[BUF_LEN];
 
-	char *token;
+	char *token, *tok_saveptr;
 	char s_buffer[BUF_LEN];
 	char command[BUF_LEN];
 	int value;
@@ -37,13 +37,13 @@ handle_servers ( void ) {
 		bzero (s_buffer, BUF_LEN);
 		bzero (command, BUF_LEN);
 		bzero (message, BUF_LEN);
-		token = strtok (s_line, " ");
+		token = strtok_r (s_line, " ", &tok_saveptr);
 		strncpy (command, token, BUF_LEN);
 
 		if ( strcmp(command, "WRITE") == 0 ) {
-			token = strtok (NULL, " \"");
+			token = strtok_r (NULL, " ", &tok_saveptr);
 		} else {
-			token = strtok (NULL, "\n");
+			token = strtok_r (NULL, "\n", &tok_saveptr);
 		}
 		value = atoi(token);
 
@@ -56,7 +56,7 @@ handle_servers ( void ) {
 			}
 		} else {
 			if ( strcmp(command, "WRITE") == 0 ) {
-				token = strtok (NULL, "\"\n");
+				token = strtok_r (NULL, "\n", &tok_saveptr);
 				strncpy (message, token, BUF_LEN);
 				sprintf (s_buffer, "%s %s", command, message);
 			} else {

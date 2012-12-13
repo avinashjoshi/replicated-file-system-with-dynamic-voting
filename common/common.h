@@ -15,6 +15,7 @@
 
 #define UP 1
 #define DOWN 0
+#define HALTED -1
 
 #define TRUE 1
 #define FALSE 0
@@ -34,8 +35,6 @@ FILE *fp_log;
 FILE *fp_out;
 char s_hostname[HOST_SIZE];
 char s_hostname_short[HOST_SIZE];
-
-int my_status;
 
 /*
  * Set of all rechable servers

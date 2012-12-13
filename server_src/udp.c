@@ -25,6 +25,27 @@ resolve_hostname ( char *s_ip ) {
 }
 
 void
+*handle_timer ( void *text ) {
+	int i_serv;
+	while ( 1 ) {
+		usleep ( TIMEOUT * _MSEC );
+		for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+			if ( T[i_serv] >= 20 ) {
+				if ( T[i_serv] > 20 ) {
+					pthread_mutex_lock ( &lock_status );
+					P[i_serv] = DOWN;
+					pthread_mutex_unlock ( &lock_status );
+				}
+				ping (i_serv);
+			}
+			T[i_serv] += 10;
+		}
+		if ( my_status == HALTED )
+			break;
+	}
+}
+
+void
 *handle_udp_queue ( void *text) {
 	queue *ret_q;
 	char s_buffer[BUF_LEN];
@@ -49,12 +70,16 @@ void
 		} else if (strcmp(ret_q->data, "PONG") == 0 ) {
 			// Got PONG for ping (i guess)
 			// Now let everyone know that he is alive
-			pthread_mutex_lock (&lock_ping_status);
-			serv_list_index = get_serv_index(ret_q->host);
-			serv_list[serv_list_index].status = UP;
+			/*
+			   pthread_mutex_lock (&lock_ping_status);
+			   serv_list_index = get_serv_index(ret_q->host);
+			//serv_list[serv_list_index].status = UP;
+			if ( !is_ponged ( serv_list_index ) )
+			P[++i_p] = serv_list_index;
 			pthread_mutex_unlock (&lock_ping_status);
+			*/
 		} else {
-			sprintf ( s_buffer, "UNKNOWN COMMAND" );
+			sprintf ( s_buffer, "UNKNOWN-COMMAND" );
 			i_can_send = TRUE;
 		}
 
@@ -63,7 +88,7 @@ void
 		}
 	} // end while (1)
 	log_info ("[UDP-SERVER] Closing the handle_udp_queue()");
-	
+
 	return NULL;
 }
 
@@ -79,13 +104,18 @@ void
 	char *ptr_buf = s_buffer;
 	struct sockaddr_in addr_client;
 	int n_buffer = sizeof(s_buffer);
+	int recv_host_index;
+	char s_recv_hostname [HOST_SIZE];
 	socklen_t n_addr_client = sizeof(addr_client);
 
+	pthread_mutex_lock ( &lock_status );
 	my_status = UP;
+	pthread_mutex_unlock ( &lock_status );
 	log_info ("[UDP-SERVER] Started");
 
 	while (1) {
 		bzero ( ptr_buf, BUF_LEN );
+		bzero ( s_recv_hostname, HOST_SIZE );
 		ret_recv = recvfrom(sock_udp_recv, ptr_buf, n_buffer, 0, (struct sockaddr *)&addr_client, &n_addr_client);
 
 		if(ret_recv < 0) {
@@ -93,18 +123,31 @@ void
 			diep("[UDP-SERVER] recvfrom() error");
 		}
 
+		strcpy ( s_recv_hostname, resolve_hostname (inet_ntoa(addr_client.sin_addr)) );
+		recv_host_index = get_serv_index(s_recv_hostname);
+
 		if ( strcmp(ptr_buf, "NODE-DOWN") == 0 ) {
 			log_info ("[UDP-SERVER] Master requested NODE-DOWN");
+			pthread_mutex_lock ( &lock_status );
 			my_status = DOWN;
+			pthread_mutex_unlock ( &lock_status );
 			break;
 		}
 
+		if ( ! (strcmp ( ptr_buf, "PING") == 0) ) {
+			pthread_mutex_lock ( &lock_status );
+			P[recv_host_index] = UP;
+			T[recv_host_index] = 0;
+			pthread_mutex_unlock ( &lock_status );
+			if ( ! (strcmp ( ptr_buf, "PONG") == 0) ) {
+				log_info("[UDP-SERVER] RECEIVED %d:%s {%s}", recv_host_index, s_recv_hostname, ptr_buf);
+			}
+		}
+
 		pthread_mutex_lock ( &lock_udp_q );
-		insert_queue ( &udp_q, resolve_hostname (inet_ntoa(addr_client.sin_addr)), ptr_buf );
+		insert_queue ( &udp_q, s_recv_hostname, ptr_buf );
 		pthread_mutex_unlock ( &lock_udp_q );
 
-		log_info("[UDP-SERVER] RECEIVED (%s) %s:%d - \"%s\"", resolve_hostname (inet_ntoa(addr_client.sin_addr)),
-				inet_ntoa(addr_client.sin_addr), ntohs(addr_client.sin_port), ptr_buf);
 	}
 
 	close(sock_udp_recv);
@@ -213,6 +256,37 @@ ping_servers ( void ) {
 	u_port = PORT;
 
 	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
-		udp_send (serv_list[i_serv].name, PORT, "PING");
+		ping ( i_serv );
+	}
+}
+
+void
+ping ( int i_serv ) {
+	udp_send ( serv_list[i_serv].name, PORT, "PING");
+}
+
+void
+print_rechable_servers ( void ) {
+	int i_serv;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( P[i_serv] == UP ) {
+			log_info ("[RECHABLE] %s", serv_list[i_serv].name);
+		}
+	}
+}
+
+void
+reset_servers ( void ) {
+	int i_serv;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		P[i_serv] = DOWN;
+	}
+}
+
+void
+reset_timers ( void ) {
+	int i_serv;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		T[i_serv] = 20;
 	}
 }
