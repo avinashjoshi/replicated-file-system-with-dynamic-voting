@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define READ 0
+#define WRITE 1
+
 //Main UDP/TCP Thread
 pthread_t udp_thread;
 pthread_t tcp_thread;
@@ -24,9 +27,26 @@ int sock_tcp;
 
 
 int my_status;
+int my_id;
+
+int recv_votes;
+int total_voters;
+
+int is_voting;
+pthread_mutex_t lock_voting;
+pthread_mutex_t lock_p;
 
 int P[TOTAL_SERVERS];
 int T[TOTAL_SERVERS];
+int M;
+char I[TOTAL_SERVERS + 1];
+
+struct vote_response {
+	int status;
+	int vn;
+	int ru;
+	char ds[TOTAL_SERVERS];
+} votes[TOTAL_SERVERS];
 
 /* For the main algo */
 int vn;
@@ -47,10 +67,20 @@ void ping ( int );
 void print_rechable_servers ( void );
 void ping_servers ( void );
 void reset_timers ( void );
+void reset_servers ( void );
 void *handle_timer ( void * );
 
 void tcp_recv_init ( int );
 void *handle_tcp ( void * );
 void *handle_tcp_queue ( void * );
+
+/* To do with voting */
+void send_vote_request ( void );
+void reset_votes ( void );
+int is_distinguished ( void );
+int belongs_to ( char *, char * );
+int is_latest_copy ( void );
+int vote_request_rw ( int );
+int total_voted_servers ( void );
 
 void test_udp_send ( int );

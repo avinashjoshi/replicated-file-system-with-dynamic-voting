@@ -21,7 +21,9 @@
 
 	#define log_warn(M, ...) fp_log = fopen(s_log_filename, "a"); fprintf(fp_log, "[WARN] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__); fclose(fp_log)
 
-	#define log_info(M, ...) fp_log = fopen(s_log_filename, "a"); fprintf(fp_log, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, ##__VA_ARGS__); fclose(fp_log)
+//	#define log_info(M, ...) fp_log = fopen(s_log_filename, "a"); fprintf(fp_log, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, ##__VA_ARGS__); fclose(fp_log)
+
+	#define log_info(M, ...) fp_log = fopen(s_log_filename, "a"); fprintf(fp_log, "[INFO]" M "\n", ##__VA_ARGS__); fclose(fp_log)
 
 	#define write_file(M, ...) pthread_mutex_lock (&lock_file); fp_log = fopen(s_out_filename, "a"); fprintf(fp_log, M "\n", ##__VA_ARGS__); fclose(fp_log); pthread_mutex_unlock (&lock_file)
 

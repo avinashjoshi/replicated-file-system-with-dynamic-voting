@@ -104,6 +104,22 @@ void
 	return NULL;
 }
 
+void
+send_vote_request ( void ) {
+	int i_serv;
+	pthread_mutex_lock ( &lock_p );
+	recv_votes = 0;
+	total_voters = 0;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( P[i_serv] == UP ) {
+			udp_send ( serv_list[i_serv].name, PORT, "VOTE-REQUEST");
+			total_voters ++;
+			log_info ("VOTE-REQUEST to  %s", serv_list[i_serv].name);
+		}
+	}
+	pthread_mutex_unlock ( &lock_p );
+}
+
 /*
  * This function checks queue for new messages
  * and pops them, does computation
@@ -154,6 +170,10 @@ void
 			udp_send ( "localhost", PORT, "NODE-DOWN");
 		} else if ( strcmp(ret_q->data, "READ") == 0 ) {
 			/* Read procedure */
+			if ( vote_request_rw(READ) ) {
+				sprintf ( s_buffer, "LAST-LINE from %s", s_hostname_short );
+				i_can_send = TRUE;
+			}
 		} else {
 			strcpy ( s_temp, ret_q->data );
 			token = strtok_r (s_temp, " \"", &tok_saveptr);
@@ -165,8 +185,18 @@ void
 					/* Write procedure */
 					token = strtok_r (NULL, "\"", &tok_saveptr);
 					strcpy ( s_write, token );
-					write_file ( "%s", s_write);
-					print_rechable_servers();
+					//print_rechable_servers();
+
+					vote_request_rw(WRITE);
+					write_file ( "<%d,%d,%s,%s>", vn, ru, ds, s_write);
+					sprintf ( s_buffer, "COMMIT<%d,%d,%s,%s>", vn, ru, ds, s_write);
+					int i;
+					for ( i = 0; i < TOTAL_SERVERS; i++ ) {
+						if (votes[i].status == DOWN )
+							continue;
+
+						udp_send ( serv_list[i].name, PORT, s_buffer);
+					}
 				}
 			}
 		}

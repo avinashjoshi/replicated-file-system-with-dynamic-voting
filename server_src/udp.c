@@ -31,26 +31,207 @@ void
 		usleep ( TIMEOUT * _MSEC );
 		for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
 			if ( T[i_serv] >= 20 ) {
-				if ( T[i_serv] > 20 ) {
-					pthread_mutex_lock ( &lock_status );
-					P[i_serv] = DOWN;
-					pthread_mutex_unlock ( &lock_status );
-				}
+				pthread_mutex_lock ( &lock_p );
+				P[i_serv] = DOWN;
+				pthread_mutex_unlock ( &lock_p );
 				ping (i_serv);
+			} else {
 			}
 			T[i_serv] += 10;
 		}
 		if ( my_status == HALTED )
 			break;
 	}
+	return NULL;
+}
+
+void
+reset_votes ( void ) {
+	int i_voter;
+	for ( i_voter = 0; i_voter < TOTAL_SERVERS; i_voter++ ) {
+		votes[i_voter].status = DOWN;
+	}
+}
+
+int
+get_serv_letter ( int integer ) {
+	return ( 65 + integer );
+}
+
+/*
+ * Returns true if all of
+ * who belongs to whom
+ */
+int
+belongs_to ( char *who, char *whom ) {
+	int i_who, i_whom;
+	int flag = FALSE;
+	for ( i_who = 0; i_who < strlen(who); i_who++ ) {
+		flag = FALSE;
+		for ( i_whom = 0; i_whom < strlen(whom); i_whom++ ) {
+			if ( who[i_whom] == whom[i_whom] ) {
+				flag = TRUE;
+			}
+		}
+		if ( flag == FALSE )
+			break;
+	}
+	return flag;
+}
+
+int
+is_distinguished ( ) {
+	M = 0;
+	char s_letter[] = "0";
+	int N;
+	int i_serv;
+	strcpy ( I, "");
+	/* M = MAX {VN_j :S_j belongsto P} */
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( votes[i_serv].status == DOWN )
+			continue;
+		if (votes[i_serv].vn > M) {
+			M = votes[i_serv].vn;
+		}
+	} // Done getting Max VN
+	/* Getting I */
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( votes[i_serv].status == DOWN )
+			continue;
+		if (votes[i_serv].vn == M) {
+			sprintf ( s_letter, "%c", get_serv_letter(i_serv));
+			strcat ( I, s_letter );
+			N = votes[i_serv].ru;
+		}
+	}
+
+	if ( strlen (I) > N/2 )
+		return TRUE;
+	else if ( strlen (I) == N/2 )
+		if ( belongs_to ( ds, I ) )
+			return TRUE;
+		else
+			return FALSE;
+	else
+		return FALSE;
+
+}
+
+int
+is_latest_copy ( void ) {
+	int i_serv;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( votes[i_serv].status == DOWN )
+			continue;
+		if ( vn < votes[i_serv].vn )
+			return FALSE;
+	}
+	return TRUE;
+}
+
+int
+total_voted_servers ( void ) {
+	int i_serv;
+	int total = 0;
+	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+		if ( votes[i_serv].status == DOWN )
+			continue;
+		total ++;
+	}
+	return total;
+}
+
+int
+is_even ( int number ) {
+	if ( (number % 2) == 0 ) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
+
+void
+fault_tolerance ( void ) {
+	reset_votes();
+	send_vote_request();
+	usleep ( NETWORK_DELAY * _MSEC );
+	if ( is_distinguished() ) {
+		if ( vn <  M ) {
+			/* obtain latest copy */
+		}
+	}
+}
+
+int
+vote_request_rw ( int read_write ) {
+	int ret_val = FALSE;
+	while ( 1 ) {
+		pthread_mutex_lock ( &lock_voting );
+		if ( is_voting == TRUE ) {
+			pthread_mutex_unlock ( &lock_voting );
+			usleep ( NETWORK_DELAY * _MSEC );
+			continue;
+		} else {
+			is_voting = TRUE;
+			break;
+		}
+	}
+	reset_votes();
+	send_vote_request();
+	//while ( recv_votes < total_voters-1 );
+	usleep ( NETWORK_DELAY * _MSEC );
+
+	int i;
+	for ( i = 0; i < TOTAL_SERVERS; i++ ) {
+		if ( votes[i].status == DOWN )
+			continue;
+		log_info ( "%d:<%d,%d,%s>", i, votes[i].vn, votes[i].ru, votes[i].ds);
+	}
+
+	if ( is_distinguished() ) {
+		if ( is_latest_copy() == FALSE ) {
+			/* get latest copy */
+		}
+		int i_serv;
+		char s_temp[] = "0";
+		ret_val = TRUE;
+		if ( read_write == WRITE ) {
+			vn = M + 1;
+			ru = total_voted_servers(); 
+			strcpy ( ds, "" );
+			/* P_i If |P_i|=3 */
+			if ( ru == 3 ) {
+				for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+					if ( votes[i_serv].status == DOWN  )
+						continue;
+					sprintf ( s_temp, "%c", get_serv_letter(i_serv));
+					strcat ( ds, s_temp);
+				}
+			} else if ( (ru > 3) && is_even(ru) ) {
+				for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
+					if ( votes[i_serv].status == DOWN  )
+						continue;
+					sprintf ( s_temp, "%c", get_serv_letter(i_serv));
+					strcat ( ds, s_temp);
+					break;
+				}
+			}
+		}
+	}
+
+	is_voting = FALSE;
+	pthread_mutex_unlock ( &lock_voting );
+	return ret_val;
 }
 
 void
 *handle_udp_queue ( void *text) {
 	queue *ret_q;
 	char s_buffer[BUF_LEN];
+	char s_buffer_temp[BUF_LEN];
+	char *token, *tok_saveptr;
 	int i_can_send;
-	int serv_list_index;
+	int host_index;
 	while (1) {
 		bzero ( s_buffer, BUF_LEN);
 		i_can_send = FALSE;
@@ -62,25 +243,41 @@ void
 		}
 		pthread_mutex_unlock ( &lock_udp_q );
 		//printf ("REMOVED QUEUE: %s: %s\n", ret_q->host, ret_q->data);
+		host_index = get_serv_index ( ret_q->host );
 		if (strcmp(ret_q->data, "PING") == 0 ) {
 			sprintf ( s_buffer, "PONG" );
 			i_can_send = TRUE;
 		} else if (strcmp(ret_q->data, "HALT") == 0 ) {
 			break;
-		} else if (strcmp(ret_q->data, "PONG") == 0 ) {
-			// Got PONG for ping (i guess)
-			// Now let everyone know that he is alive
-			/*
-			   pthread_mutex_lock (&lock_ping_status);
-			   serv_list_index = get_serv_index(ret_q->host);
-			//serv_list[serv_list_index].status = UP;
-			if ( !is_ponged ( serv_list_index ) )
-			P[++i_p] = serv_list_index;
-			pthread_mutex_unlock (&lock_ping_status);
-			*/
-		} else {
-			sprintf ( s_buffer, "UNKNOWN-COMMAND" );
+		} else if (strcmp(ret_q->data, "VOTE-REQUEST") == 0 ) {
+			sprintf ( s_buffer, "VOTE-REPLY<%d,%d,%s>", vn, ru, ds);
 			i_can_send = TRUE;
+		} else {
+			strcpy ( s_buffer_temp, ret_q->data );
+			token = strtok_r ( s_buffer_temp, "<", &tok_saveptr);
+			if ( token == NULL ) {
+				sprintf ( s_buffer, "UNKNOWN-COMMAND" );
+				i_can_send = TRUE;
+			}
+			if ( strcmp(token, "COMMIT") == 0 ) {
+				token = strtok_r ( NULL, ">", &tok_saveptr);
+				if ( token != NULL ) {
+					write_file ( "<%s>", token);
+				}
+			}
+			if ( strcmp(token, "VOTE-REPLY") == 0 ) {
+				token = strtok_r ( NULL, ",", &tok_saveptr);
+				votes[host_index].vn = atoi ( token );
+				token = strtok_r ( NULL, ",", &tok_saveptr);
+				votes[host_index].ru = atoi ( token );
+				token = strtok_r ( NULL, ">", &tok_saveptr);
+				strcpy ( votes[host_index].ds, token );
+				votes[host_index].status = UP;
+				recv_votes ++;
+			} else {
+				sprintf ( s_buffer, "UNKNOWN-COMMAND" );
+				i_can_send = TRUE;
+			}
 		}
 
 		if ( i_can_send ) {
@@ -141,7 +338,12 @@ void
 			pthread_mutex_unlock ( &lock_status );
 			if ( ! (strcmp ( ptr_buf, "PONG") == 0) ) {
 				log_info("[UDP-SERVER] RECEIVED %d:%s {%s}", recv_host_index, s_recv_hostname, ptr_buf);
+			} else {
+				continue;
 			}
+		} else {
+			udp_send ( s_recv_hostname, PORT, "PONG");
+			continue;
 		}
 
 		pthread_mutex_lock ( &lock_udp_q );
@@ -252,8 +454,7 @@ udp_send_init ( void ) {
  */
 void
 ping_servers ( void ) {
-	int i_serv, u_port;
-	u_port = PORT;
+	int i_serv;
 
 	for ( i_serv = 0; i_serv < TOTAL_SERVERS; i_serv++ ) {
 		ping ( i_serv );

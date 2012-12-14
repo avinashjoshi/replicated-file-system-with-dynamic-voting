@@ -9,7 +9,9 @@ global_init ( void ) {
 	my_status = DOWN;
 	vn = 0;
 	ru = TOTAL_SERVERS;
-	*ds = NULL;
+	strcpy(ds, "0");
+	recv_votes = 0;
+	is_voting = FALSE;
 	reset_timers();
 	reset_servers();
 }
@@ -25,6 +27,8 @@ main ( int argc, char *argv[] ) {
 	strtok(s_hostname_short, ".");
 	sprintf (s_log_filename, "logs/%s", s_hostname_short);
 	sprintf (s_out_filename, "file_servers/%s", s_hostname_short);
+
+	my_id = get_serv_index(s_hostname);
 
 	fp_log = fopen ( s_log_filename, "w" );
 	ASSERT ( fp_log, " - folder 'logs' does not exist");
